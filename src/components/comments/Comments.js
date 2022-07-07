@@ -13,6 +13,7 @@ const Comments = () => {
         }
     });
 
+
     const submit = (obj)=> {
         createComment(obj).then(({data}) => console.log(data))
     }

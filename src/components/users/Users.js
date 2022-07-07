@@ -13,6 +13,7 @@ const Users = () => {
         }
     });
 
+
     const submit = (obj)=> {
         createUser(obj).then(result => console.log(result))
     }

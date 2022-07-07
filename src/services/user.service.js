@@ -9,4 +9,5 @@ const createUser = (obj) => {
         .then(response => response.json())
 }
 
+
 export {createUser};
