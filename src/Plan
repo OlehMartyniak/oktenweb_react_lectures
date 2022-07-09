@@ -1,0 +1,34 @@
+Завдання:
+
+
+реалізувати 3 маршрути
+todos - при переході на який тягнуться всі todo з https://jsonplaceholder.typicode.com/todos
+
+albums - при переході на який тягнуться всі альбоми з https://jsonplaceholder.typicode.com/albums
+
+comments - при переході на який тягнуться всі комментарі https://jsonplaceholder.typicode.com/comments
+при натисканні на комментар тягнеться пост, до якого належіить цей коментар всі його пости. приклад запиту
+https://jsonplaceholder.typicode.com/posts/ID
+id поста взяти з коментаря (postId)
+
+відображати ті чи інші маршрути можна на будь-якому рівні на ваш вибір.
+
+
+Реалізація:
+
+1. Папки components (albums,comments,header,posts,todos), layouts (MainLayout), pages (AlbumPage,CommentsPage,TodosPage)
+   services;
+
+2. В MainLayout передаємо header та <Outlet/>, в header будуємо меню та лінки (<Link/>) (<Outlet/> вставляється в усі
+   вкладені роути);
+
+3. В App будуємо <Routes/> (App обгортаємо <BrowserRouter> в index.js), які привязуємо до лінків в меню header;
+
+4. Створюємо сервіси для отримання інформації через аксіос (getTodos,getComments,getAlbums,getPostCurrentComment);
+
+5. Передамо в кожну з pages (AlbumPage,CommentsPage,TodosPage) кожній їхній компонент (AlbumsComponent...);
+
+6. Наповнити всі components стандартними наборами для запитів на АПІ та виведення (useState,UseEffect,map);
+
+7. Звернути увагу як передаються PostCurrentComponent i PostComponent (useParams i перекидування postId для пошуку
+   відповідного поста);
