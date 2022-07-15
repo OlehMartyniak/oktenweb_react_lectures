@@ -73,6 +73,58 @@
     2) кладемо цю функцію deleteCar пропсою в {cars.map(car => <Car key={car.id} car={car} deleteCar={deleteCar}/>)};
     3) приймаємо в <Car/> і на кнопці delete встановлюємо подією кліку та передаємо їй id: <button onClick={()=>deleteCar(id)}>Delete</button>
 
-7.
+7.                                              Редагування <Car/> (кнопка edit)
+
+    1) редагувати будемо в тій самій формі, в якій створюємо новий обєкт, тому при кліку на Edit потрібно вивести інформацію про обєкт в форму;
+       для цього в <Cars/> створимо новий стейт і задамо йому початковий стан null: let [carEdit,setCarEdit] = useState(null);
+    2) передамо setCarEdit в наш <Car/> як пропсу: {cars.map(car => <Car key={car.id} car={car} deleteCar={deleteCar} setCarEdit={setCarEdit}/>)};
+    3) приймемо пропсу setCarEdit і викличемо її при виклику нажатті клавіші edit і передамо туди наш car: <button onClick={()=>setCarEdit(car)}>Edit</button>
+    4) тепер наш початковий carEdit заповнений і передамо його в форму: <CarForm addCar={addCar} carEdit={carEdit}/>
+    5) приймемо пропсу carEdit в формі і використаємо useEffect, щоб перезаписати значення у формі:
+
+                            useEffect(()=>{
+                                    if(carEdit) {
+                                        setValue('model',carEdit.model)
+                                        setValue('price',carEdit.price)
+                                        setValue('year',carEdit.year)
+                                    }
+                                },[carEdit])
+
+    6) щоб коли ми редагуємо <Car/> кнопка save у формі ставала кнопкою edit перезапишемо умову кнопки: <button>{carEdit ? 'Edit' : 'Save'}</button>
+    7) перезапишемо функціонал кнопки submit відповідно до нової умови:
+
+                            const submit = async (newCar)=> {
+                                if (!carEdit) {
+                                    const {data} = await carService.create(newCar)
+                                    addCar(data)
+                                } else {
+                                    const {data} = await carService.updateById(carEdit.id,newCar);
+                                }
+                                reset()
+                            };
+
+    8) Тепер оновлену інформацію нам потрібно перезаписати в масиві cars (<Cars/>), для цього створимо функцію updateCar:
+
+                            const updateCar = (car) => {
+                                const res = [...cars];
+                                const find = res.find(value => value.id === carEdit.id);
+                                Object.assign(find,car);
+                                setCars(res);
+                                setCarEdit(null);
+                            }
+
+    9) тепер передамо  цю функцію пропсою в форму: <CarForm addCar={addCar} carEdit={carEdit} updateCar={updateCar}/>
+    10) отримаємо пропсу в кар формі і викличемо в функції submit  в розділі else:
+
+                            const submit = async (newCar)=> {
+                                if (!carEdit) {
+                                    const {data} = await carService.create(newCar)
+                                    addCar(data)
+                                } else {
+                                    const {data} = await carService.updateById(carEdit.id,newCar);
+                      !             updateCar(data )
+                                }
+                                reset()
+                            };
 
 
