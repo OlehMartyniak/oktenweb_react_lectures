@@ -1,0 +1,78 @@
+1. встановити axios та react-hook-forms;
+2. створюємо робочі папки - components(Car,Cars,CarForm),constants(urls),services (axiosService,carService);
+3. викликаємо Cars, даємо запит на API по стандарту (через useEffect  викликаємо carService, метод getAll,
+   деструктуруємо data, методом map передаємо в компонент Car, де виводимо id,model,price,year);
+
+                                                 Форма
+
+4. в CarForm прописуємо const {register, handleSubmit, reset, setValue, formState:{errors}} = useForm();
+    reset - для перезавантаження форми
+    setValue - для встановлення інпутів
+    formState:{errors} - для пропису помилок
+
+    в <form> на onSubmit передаємо handleSubmit який буде викликати функцію submit (<form onSubmit={handleSubmit(submit)}>)
+    {
+        required:true - обовязковість заповнювати
+        pattern: new RegExp(/^[a-zA-ZА-яіІїЇ]{1,20}$/) - символи які будуть використовуватись і їх кількість ({1,20}$)
+        valueAsNumber:true - перетворення стрінги в число
+        min:0 - мінімальне число
+        max:1000000 - максимальне число
+        max:new Date().getFullYear() - поточний рік
+    }
+    useForm({mode:'all'} - буде викликати errors підказки якщо вони виникають під час заповнення форми (є і інші проперті - напр onsubmit)
+    викликаємо форму в <Cars/>
+
+5.                                              Додавання нового <Car/> в API через нашу форму (кнопка save)
+
+    1) в  <form onSubmit={handleSubmit(submit)}> викликається функція submit
+    2) прописуємо функцію submit, яка прийматиме обєкт створений формою:
+
+                     const submit = async (newCar)=> {
+                         const {data} = await carService.create(newCar)    (деструктуризуємо data, бо її отирмуємо з аксіоса)
+                     };
+
+    3) в <Cars/> створюємо функцію addCar, яка прийматиме новий car (переданий з форми) і додаватиме його до вже існуючих
+       (тому також викликаємо setCars, аби перезаписати їх):
+
+                        const addCar = (car) => {
+                                setCars([...cars,car])
+                            };
+
+    4) передаємо функцію addCar в нашу форму в якості пропси: <CarForm addCar={addCar}/>
+    5) приймаємо цю пропсу в <CarForm/>:
+
+                        const CarForm = ({addCar}) => {}
+
+    6) тоді передаємо її в функцію submit, де викликаємо її і очищаємо форму функцією reset() :
+
+                        const submit = async (newCar)=> {
+                            const {data} = await carService.create(newCar)
+                            addCar(data)
+                            reset()
+                        };
+
+6.                                              Видалення <Car/> (кнопка delete)
+
+    1) в <Cars/> створюємо функцію deleteCar, яка буде асинхронною функцією, що приймає id,
+       звертаємось до carService та методу deleteById куди передаємо id (метод delete видалить <Car/> з бази даних),
+       тепер потрібно видалити цей <Car/> з масиву; для цього створимо змінну res яка копіює масив cars;
+       далі методом findIndex знайдемо індекс, який дорівнює нашій <Car/> (через id);
+       робимо перевірку (findIndex повертає -1 якщо не знайде елемент) і видаляємо елемент який не проходить перевірку;
+       і тоді звертаємось до методу setCars і передаємо йому масив масив setCars(res)
+
+                            const deleteCar = async (id) => {
+                              await carService.deleteById(id);
+                              const res = [...cars];
+                              const index = res.findIndex(value => value.id === id);
+                              if (index !== -1) {
+                                  res.splice(index,1);
+                                  setCars(res)
+                              }
+                            };
+
+    2) кладемо цю функцію deleteCar пропсою в {cars.map(car => <Car key={car.id} car={car} deleteCar={deleteCar}/>)};
+    3) приймаємо в <Car/> і на кнопці delete встановлюємо подією кліку та передаємо їй id: <button onClick={()=>deleteCar(id)}>Delete</button>
+
+7.
+
+
