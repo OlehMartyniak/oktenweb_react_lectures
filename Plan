@@ -1,0 +1,20 @@
+В package.json додати: в dependencies - redux, react-redux;
+Створити devDependencies і додати: @types/react-redux;
+
+В index створюємо: let store = createStore(()=>{
+                      return 'default state';
+                  });
+І обгортаємо компонент <App/>:       <Provider store={store}>
+                                         <App />
+                                     </Provider>
+
+Тепер викликавши в будь-якій компоненті:     let state = useSelector(state => state);
+ми можемо з глобального store (let store = createStore()) передавати інформацію в будь який компонент;
+
+Щоб змінити стан використовуємо хук useDispatch();
+
+Таким чином: useSelector - отримує наш state, a useDispatch - міняє його;
+Однак useDispatch приймає не просто значення, а обєкт з ключами {type = '', payload = ''};
+type - це рандомне значення (ідентифікатор), а payload - це корисне навантаження (те що ми хочемо передавати);
+
+Тепер з допомогою switch (аналог if/else) можна задавати логіку тим чи іншим діям/кнопкам;
