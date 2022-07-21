@@ -1,0 +1,17 @@
+В наш store ми будемо передавати обєкт state, який матиме ключі users i posts, які по замовчуванню дорівнюватимуть
+пустому масиву;
+
+Далі з доп switch при різних умовах повертатимемо новий копію нашого state, в якому заповнюватимемо відповідний ключ -
+users/posts значенням, переданим в action.payload :
+
+                    case 'LOAD_USERS':
+                                return {...state, users: action.payload};
+
+Теж саме стосується пошуку окремого post/user, однак робити це будемо через id, тому перевірку зробимо методом find:
+
+                    case 'GET_USER':
+                                return state.users.find(value => value.id == action.payload);
+
+Отже, в Home ми сформували запити через fetch, і за допомогою dispatch передали значення в index.js, де у нас описаний
+store і switch логіка. Тоді в UsersComponent i PostsComponent викликали useSelector, з допомогою якого витягли store.users i
+store.posts, а далі за звичною логікою промапали і вивели
