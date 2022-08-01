@@ -1,0 +1,155 @@
+Додаємо axios, react-redux, react-hook-form, @reduxjs/toolkit
+
+1.
+Створимо папку redux і додамо в неї index,store i папку slices
+
+В slices скористаємось хуками: combineReducers і configureStore:
+
+               const rootReducer = combineReducers({}); (обєднує різні редусери)
+
+               const setupStore = ()=> configureStore({
+                   reducer:rootReducer
+               });
+
+В головному index обгорнемо компонент <App/> в <Provider/>, викличемо хуй setupStore() і передамо
+його пропсою в <Provider store={store}>
+
+2.
+Створюємо counterSliceOne.js, де всередині викликаємо createSlice. Це обєкт який приймає в себе 3 параметри (name -
+унікальний единтефікатор, initialState - стан слайсу за замовчуванням, зазвичай виноситься в окрему змінну і reducers):
+
+                const initialState = { countOne: 0 };
+
+                const counterSliceOne = createSlice({
+                    name: 'counterSliceOne',
+                    initialState,
+                    reducers:{}
+                });
+
+Власне в обєкті reducers ми будемо прописувати логіку дій: inc - для збільшення, dec - для зменшення, reset - для обнулення:
+
+                    reducers:{
+                        inc:(state,action) => {
+                            ++state.countOne
+                        },
+                        dec:(state,action) => {
+                            --state.countOne
+                        },
+                        reset:(state,action) => {
+                            state.countOne = 0
+                        }
+                    }
+
+Щоб отримати reducer i actions:
+
+                    const {reducer:countOneReducer,actions:{inc,dec,reset}} = counterSliceOne;
+
+Щоб мати можливість доступитись доступитись легко до методів  reducers:
+
+                    const countOneAction = {inc,dec,reset};
+
+Експортуємо: export {countOneReducer,countOneAction};
+
+В store в combineReducers додамо наш   countOneReducer:
+
+                    const rootReducer = combineReducers({countOneReducer});
+
+3.
+В src створимо папку components, де додамо CountOneTools.js i ShowCounts.js
+В ShowCounts використаємо хук useSelector щоб звернутись до countOneReducer, переданого в combineReducers, що дасть
+нам доступ до counterSliceOne (і одразу деструктуризуємо обєкт countOne - initialState в нашому слайсі):
+
+                    const {countOne} = useSelector(state => state.countOneReducer);
+
+4.
+В CountOneTools викличемо хук useDispatch (запускає зміни в нашому сторі):
+
+                    const dispatch = useDispatch();
+
+І створимо 3 кнопки для нашого counter, куди передамо dispatch з відповідною логікою (inc,dec,reset):
+
+                    <button onClick={()=>dispatch(countOneAction.inc())}>increment</button>
+                    <button onClick={()=>dispatch(countOneAction.dec())}>decrement</button>
+                    <button onClick={()=>dispatch(countOneAction.reset())}>reset</button>
+
+Тепер потрібно отримати доступ до наших action та reducer:
+
+                    const {reducer:countOneReducer,actions:{inc,dec,reset}} = counterSliceOne;
+
+Щоб отримувати підказки action створимо обєкт, куди передамо наші action:
+
+                    const countOneAction = {inc,dec,reset};
+
+Тепер передамо наш countOneReducer в combineReducer в нашому store;
+
+
+                                        Робота з асинхронними запитами в redux-toolkit
+
+1. Створити usersSlice і з допомогою функції createAsyncThunk зробити запит і передати дані с store:
+
+                    const initialState = {
+                        users: []
+                    };
+
+                    const getUsers = createAsyncThunk(
+                        'usersSlice/getUsers',
+                        async () => {
+                            const users = fetch('https://jsonplaceholder.typicode.com/users')
+                                .then(value => value.json());
+                            return users
+                        }
+                    )
+
+                    const usersSlice = createSlice({
+                        name: 'usersSlice',
+                        initialState,
+                        reducers: {},
+                        extraReducers: {
+                            [getUsers.fulfilled]: (state,action) => {           // буде виконуватись, лише якщо масив наповнений (fulfilled)
+                                state.users = action.payload
+                            }
+                        }
+
+                    });
+
+                    const {reducer:usersReducer} = usersSlice;
+
+                    const usersActions = {getUsers};
+
+                    export {usersReducer,usersActions};
+
+2. Прийняти дані usersReducer в store в combineReducer:
+
+                    const rootReducer = combineReducers({countOneReducer,countTwoReducer,usersReducer});
+
+                    const setupStore = ()=> configureStore({
+                        reducer:rootReducer
+                    });
+
+3. Описати логіку та створити кнопку в UsersTools:
+
+                    const UsersTools = () => {
+
+                        const dispatch = useDispatch();
+
+                        return (
+                            <div>
+                                <button onClick={()=>dispatch(usersActions.getUsers())}>show users</button>
+                            </div>
+                        );
+                    };
+
+4. Прийняти дані в UsersComponent, розмапити і передати в UserComponent:
+
+                    const UsersComponent = () => {
+
+                        const {users} = useSelector(state => state.usersReducer)
+
+                        return (
+                            <div>
+                                {users.map(user => <UserComponent key={user.id} user={user}/>)}
+                            </div>
+                        );
+                    };
+
+
