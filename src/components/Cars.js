@@ -1,17 +1,16 @@
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
+import {useEffect} from "react";
 
 import { Car } from "./Car";
-import { carActions,getAll } from "../redux";
+import { carActions } from "../redux/slices/carSlice";
 
 const Cars = () => {
-
     const {cars} = useSelector(state => state.cars);
     const dispatch = useDispatch();
 
-    useEffect(()=>{
+    useEffect(() => {
         dispatch(carActions.getAll())
-    },[]);
+    }, [])
 
     return (
         <div>
