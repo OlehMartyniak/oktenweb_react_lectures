@@ -1,0 +1,78 @@
+Архітектура виводу і редагування описана в гілці react-_lecture_7(react-toolit)(p2), однак там наявні деякі упущення коду, тому краще його брати звідси: https://github.com/DemchyshynV/react-toolkit-mar-2022/tree/toolkit_part2
+
+Тут будуть описані кнопки і архітектура для додавання і видалення компонентів
+
+В carService додамо:
+
+            create: (car) => axiosService.post(urls.cars,car)
+
+Опишемо асинхронний запит на створення в  carSlice:
+
+            const createCar = createAsyncThunk(
+                'carSlice/create',
+                async ({car},{rejectWithValue}) => {
+                    try {
+                        const {data} = await carService.create(car);
+                        return data
+                    } catch (e) {
+                        return rejectWithValue(e.response.data)
+                    }
+                }
+            )
+
+Також в  carService створимо запит на видалення компонента по його id:
+
+            const deleteCar = createAsyncThunk(
+                'carSlice/delete',
+                async ({id},{rejectWithValue}) => {
+                    try {
+                        await carService.deleteById(id);
+                        return id
+                    } catch (e) {
+                        return rejectWithValue(e.response.data)
+                    }
+                }
+            )
+
+Окрім того, щоб не прописувати дії для кожного методу, якщо отримуємо помилку, то запишемо один універсальний в extraReducers:
+
+            .addDefaultCase((state,action) => {
+                const [type] = action.type.split('/').splice(-1);
+                if(type === 'rejected'){
+                    state.errors = action.payload
+                } else {
+                    state.errors = null
+                }
+            })
+
+Також запишемо в extraReducers addCase при deleteCar:
+
+            .addCase(deleteCar.fulfilled,(state,action) => {
+                const index = state.cars.findIndex(car => car.id === index.payload)
+                state.cars.splice(index,1)
+            })
+
+Також запишемо в extraReducers addCase при createCar:
+
+            .addCase(createCar.fulfilled,(state,action) => {
+                state.cars.push(action.payload)
+            })
+
+Додамо кнопку для видалення в Car.js :
+
+            <button onClick={() => dispatch(carActions.deleteCar({id}))}>delete</button>
+
+Обновимо нашу кнопку в CarForm.js :
+
+            const submit = async (data) => {
+                if(carForUpdate) {
+                    await dispatch(carActions.updateById({id: carForUpdate.id, car: data}))
+                } else {
+                    await dispatch(carActions.createCar({car: data}))
+                }
+                reset()
+            };
+
+А також в тій же ж CarForm.js пропишемо логіку, щоб назва кнопки мінялась в залежності від того видаляєм ми чи створюєм компонент :
+
+            <button>{carForUpdate ? 'update'  : 'create'}</button>
