@@ -1,0 +1,265 @@
+За основу взято готовий проект з redux: carForm, add/delete/edit cars (react lesson 7);
+
+Додати в index.js BrowserRouter;
+В App:
+
+            <Routes>
+            <Route path='' element={<MainLayout/>}>
+                <Route index element={<Navigate to={'login'}/>}/>
+                <Route path='login' element={<LoginPage/>}/>
+                <Route path='register' element={<RegisterPage/>}/>
+                <Route path='cars' element={<CarsPage/>}/>
+            </Route>
+            </Routes>
+
+В MainLayout: 
+
+            <Header/>
+            <Outlet/> 
+
+В Header :
+
+            const navigate = useNavigate();
+
+            <div className='header'>
+                <div className='navButtons'>
+                <button onClick={()=>navigate('/login')}>Login</button>
+                <button onClick={()=>navigate('/register')}>Register</button>
+                </div> 
+            </div>
+
+Додамо додаткові урли :
+
+            const urls = {
+                cars: '/cars',
+        --->    users: '/users',
+        --->    auth: '/auth'
+            };
+
+Створимо додатковий сервіс: services > authService.js :
+
+            const _accessTokenKey = 'access';
+            const _refreshTokenKey = 'refresh';
+
+            const authService = {
+                login: (user)=>axiosService.post(urls.auth,user),
+                register: (user)=>axiosService.post(urls.users,user),
+
+                setTokens:({access,refresh}) => {
+                    localStorage.setItem(_accessTokenKey, access)
+                    localStorage.setItem(_refreshTokenKey, refresh)
+                },
+
+                deleteTokens: ()=> {
+                    localStorage.removeItem(_accessTokenKey)
+                    localStorage.removeItem(_refreshTokenKey)
+                },
+
+                getAccessToken: ()=> localStorage.getItem(_accessTokenKey),
+                getRefreshToken: ()=> localStorage.getItem(_refreshTokenKey)
+            };
+
+Створимо authSlice і опишемо його (і додамо authReducer в store):
+
+            const initialState = {
+                errors: null
+            };
+
+            const authSlice = createSlice({
+                name: 'authSlice',
+                initialState,
+                reducers: {},
+                extraReducers: (builder) =>
+                    builder
+                        .addDefaultCase((state,action) => {
+                            const [type] = action.type.split('/').splice(-1);
+                            if (type === 'rejected') {
+                                state.errors = action.payload
+                            } else {
+                                state.errors = null
+                            }
+                        })
+            });
+
+            const {reducer: authReducer, actions} = authSlice;
+            const authActions = {register};
+
+            export {authActions,authReducer};
+
+Опишемо в  authSlice  запит на реєстрацію (register):
+
+            const register = createAsyncThunk(
+                'authSlice/register',
+                async ({user},{rejectWithValue}) => {
+                    try {
+                        await authService.register(user)
+                    } catch (e) {
+                        return rejectWithValue(e.response.data)
+                    }
+                }
+            )
+
+І додамо extraReducers якщо будуть проблеми з відповіддю з сервера:
+
+            extraReducers: (builder) =>
+                builder
+                    .addDefaultCase((state,action) => {
+                        const [type] = action.type.split('/').splice(-1);
+                        if (type === 'rejected') {
+                            state.errors = action.payload
+                        } else {
+                            state.errors = null
+                        }
+                    })
+
+Створимо RegisterForm і викличемо її в RegisterPage:
+(В submit замість повернення result одразу деструктуризуємо error, і вкажемо, що якщо помилки немає, то після
+підтвердження реєстрації перенести нас на сторінку "/login")
+
+            const RegisterForm = () => {
+
+                const {register,handleSubmit} = useForm();
+                const dispatch = useDispatch();
+                const navigate = useNavigate();
+
+                const submit = async (data) => {
+                    // const result = await dispatch(authActions.register({user: data}))
+                    const {error} = await dispatch(authActions.register({user: data}))  
+                    if (!error) {                                                           
+                        navigate('/login')
+                    }
+                }
+
+                return (
+                    <form onSubmit={handleSubmit(submit)}>
+                        <input type="text" placeholder="username" {...register('username')}/>
+                        <input type="text" placeholder="password" {...register('password')}/>
+                        <button>register</button>
+                    </form>
+                );
+            };
+
+Створимо в authSlice асинхронну функцію login (і додамо в authActions): 
+
+            const login = createAsyncThunk(
+                'authSlice/login',
+                async({user},{rejectWithValue}) => {
+                    try {
+                        const {data} = await authService.login(user);
+                        return data
+                    } catch (e) {
+                        return rejectWithValue(e.response.data)
+                    }
+                }
+            )
+
+Створимо LoginForm (і викличемо її в LoginPage): 
+
+            const LoginForm = () => {
+
+                const dispatch = useDispatch();
+                const {register,handleSubmit} = useForm();
+                const navigate = useNavigate();
+
+                const submit = async (data) => {
+                    const {error} = await dispatch(authActions.login({user: data}))
+
+                    if (!error) {
+                        navigate('/cars')
+                    }
+                };
+
+                return (
+                    <form onSubmit={handleSubmit(submit)}>
+                        <input type="text" placeholder="username" {...register('username')}/>
+                        <input type="text" placeholder="password" {...register('password')}/>
+                        <button>login</button>
+                    </form>
+                );
+            };
+
+В initialState додамо поле: isAuth: null
+В extraReducers: 
+
+            .addCase(login.fulfilled,(state,action) => {
+                state.isAuth = true
+                authService.setTokens(action.payload)
+            })
+
+(Тепер коли ми зареєстровані і після логінації нас буде перенаправляти на сторінку CarsPage)  
+
+Зараз нам потрібно виводити десь помилки, якщо такі виникають.
+Для цього в MainLayout: 
+
+            const MainLayout = () => {
+    --->        const {errors} = useSelector(state => state.auth);
+                return (
+                    <div>
+                        <Header/>
+    --->                {errors && <h3>{JSON.stringify(errors)}</h3>}
+                        <Outlet/> 
+                    </div>
+                );
+            };
+
+Викличемо в CarPage наш компонент Cars           
+Розширимо метод getAll в carService:
+
+            getAll: ()=> axiosService.get(urls.cars, {
+                headers: {
+                    Authorization: `Bearer ${authService.getAccessToken()}`
+                }
+            })
+
+Розширимо initialState в carSlice:
+
+            const initialState = {
+                cars: [],
+                carForUpdate: null,
+                errors: null,
+    --->        next: null,
+    --->        prev: null
+            };
+
+В authService додамо метод:
+
+            refresh: (refresh) => axiosService.post(`${urls.auth}/refresh`,{refresh})
+        
+Підключимо бібліотеку history в package.json :
+
+            "history": "5.3.0"
+
+В axiosService :
+
+            const history = createBrowserHistory();
+
+            axiosService.interceptors.request.use((config) => {
+                const access = authService.getAccessToken();
+            
+                if (access) {
+                    config.headers.Authorization = `Bearer ${access}`
+                }
+                return config;
+            })
+            
+            let isRefreshing = false;
+            axiosService.interceptors.response.use((config) => {
+                return config
+            }, async (error) => {
+                const refresh = authService.getRefreshToken();
+                if (error.response?.status === 401 && error.config && !isRefreshing && refresh) {
+                    isRefreshing = true
+                    try {
+                        const {data} = await authService.refresh(refresh);
+                        authService.setTokens(data)
+                    } catch (e) {
+                        authService.deleteTokens();
+                        return history.replace('/login?ExpSession=true')
+                    }
+                    isRefreshing = false;
+                    return axiosService(error.config)
+                }
+                return Promise.reject(error)
+            })
+            
+            export {axiosService, history};
